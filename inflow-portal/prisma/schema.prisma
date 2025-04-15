@@ -1,0 +1,84 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  email        String   @unique
+  name         String   @unique
+  displayName  String?
+  avatar       String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  lastActiveAt DateTime?
+
+  authenticationProviders AuthenticationProvider[]
+
+  threads Thread[]
+
+  spaces Space[]
+}
+
+model AuthenticationProvider {
+  id         String @id @default(uuid()) @db.Uuid
+  name       String
+  providerId String
+
+  user   User   @relation(fields: [userId], references: [id])
+  userId String @db.Uuid
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Space {
+  id        String   @id @default(uuid()) @db.Uuid
+  icon      String?
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String  @db.Uuid
+  user   User    @relation(fields: [userId], references: [id])
+
+  threads Thread[]
+}
+
+model Thread {
+  id        String   @id @default(uuid()) @db.Uuid
+  title     String   @db.Uuid
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String  @db.Uuid
+  user   User    @relation(fields: [userId], references: [id])
+
+  messages ChatMessage[]
+
+  spaceId String? @db.Uuid
+  space   Space?  @relation(fields: [spaceId], references: [id])
+}
+
+model ChatMessage {
+  id        String   @id @default(uuid()) @db.Uuid
+
+  role      String
+  content   Json // Can store either string or structured JSON data
+
+  providerOptions Json?
+
+  threadId String  @db.Uuid
+  thread   Thread @relation(fields: [threadId], references: [id])
+}
